@@ -12,6 +12,7 @@ bleach==6.1.0
 certifi==2024.7.4
 cffi==1.16.0
 charset-normalizer==3.3.2
+click==8.1.8
 colorama==0.4.6
 comm==0.2.2
 debugpy==1.8.2
@@ -27,6 +28,7 @@ executing==2.0.1
 fastjsonschema==2.20.0
 filelock==3.16.0
 fqdn==1.5.1
+gunicorn==23.0.0
 h11==0.14.0
 httpcore==1.0.5
 httpx==0.27.0
@@ -101,6 +103,7 @@ typing_extensions==4.12.2
 tzdata==2024.2
 uri-template==1.3.0
 urllib3==2.2.2
+uvicorn==0.34.0
 virtualenv==20.26.4
 wcwidth==0.2.13
 webcolors==24.6.0
