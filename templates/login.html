@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block content %}
+
+
+<div class="container my-3 p-5 w-50 shadow">
+    <div class="container text-center p-1 rounded shadow bg-info">
+        <h2 class="text-white">LOGIN</h2>
+    </div>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {% if msg %}
+                <div class="alert alert-danger">
+                 {{msg}}
+                </div>
+         
+                {% endif %}
+                {{LDF.as_p}}
+                
+                <input class="card-btn"type="submit">
+      
+    </form>
+    <div class="clickhere1">
+        <span>Create new account </span>
+        <a class="create-account-link" id="login" href="{% url 'register' %}">click here</a>
+    </div>
+
+</div>
+
+
+{% endblock content %}
+
+
+
+
+
+
