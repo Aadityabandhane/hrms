@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect,get_object_or_404
-from .forms import Departmentform,userauthenticationForm,registrationform,Rolesform
-from .models import Department,Roles
+from .forms import Departmentform,userauthenticationForm,registrationform,Rolesform,EmployeeForm
+from .models import Department,Roles,Employe_User
 from django.contrib.auth import authenticate,login,logout
 
 from django.contrib.auth.decorators import login_required
@@ -122,6 +122,7 @@ def deleterole(request, id):
     print() 
     fm = Rolesform()   
     return redirect('roles')
+
  
 
 def updaterole(request, id):
@@ -140,3 +141,89 @@ def updaterole(request, id):
         # Initialize the form with the existing product instance
         form = Rolesform(instance=role)
         return render(request, "updaterole.html", {"form": form})
+
+
+from django.contrib import messages
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import EmployeeForm
+from .models import Employe_User, Department, Roles
+
+def create_employee(request):
+    departments = Department.objects.filter(status=True)
+    roles = Roles.objects.filter(status=True)
+    employees = Employe_User.objects.all()  # ✅ Fetch all employees
+
+    if request.method == "POST":
+        print("🚀 Form Data Received:", request.POST)  # Debugging
+
+        form = EmployeeForm(request.POST)
+        if form.is_valid():
+            employee = form.save(commit=False)
+
+            # Validate department
+            department_id = request.POST.get('dept')
+            department = Department.objects.filter(id=department_id, status=True).first()
+            if not department:
+                messages.error(request, "Invalid or inactive department selected")
+                return render(request, 'employee_list.html', {
+                    'form': form, 'departments': departments, 'roles': roles, 'employees': employees
+                })
+
+            # Validate role
+            role_id = request.POST.get('role')
+            role = Roles.objects.filter(id=role_id, status=True).first()
+            if not role:
+                messages.error(request, "Invalid or inactive role selected")
+                return render(request, 'employee_list.html', {
+                    'form': form, 'departments': departments, 'roles': roles, 'employees': employees
+                })
+
+            # Assign department and role
+            employee.department = department
+            employee.role = role
+            employee.save()
+
+            messages.success(request, "Employee created successfully!")
+            return redirect('employee_list')
+
+        else:
+            messages.error(request, "Form is invalid. Please check the inputs.")
+            print(" Form Errors:", form.errors)  # Debugging
+
+    else:
+        form = EmployeeForm()
+
+    return render(request, 'employee_list.html', {
+        'form': form, 'departments': departments, 'roles': roles, 'employees': employees
+    })
+
+
+def deleteemployee(request, emp_id):
+    employee = get_object_or_404(Employe_User, employee_id=emp_id)  # ✅ Correct lookup
+    print("Employee found:", employee)
+    employee.delete()
+    print("Employee deleted successfully")
+    messages.success(request, "Employee deleted successfully!")
+    return redirect('employee_list')  # ✅ Ensure 'employee_list' is a valid URL name
+
+
+
+
+def updateemployee(request, emp_id):
+    Employe = get_object_or_404(Employe_User, employee_id=emp_id)
+    if request.method == "POST":
+        form = EmployeeForm(request.POST, request.FILES,instance=Employe)
+        if form.is_valid():
+            form.save()
+            return redirect('updateemployee',emp_id=emp_id)
+        else:
+            # Return the form with errors to the template
+            return render(request, "updateemployee.html", {"form": form})
+    else:
+        # Initialize the form with the existing product instance
+        form = EmployeeForm(instance=Employe)
+        return render(request, "updateemployee.html", {"form": form})
+

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Department,Roles
+from .models import Department,Roles,Employe_User
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm,AuthenticationForm
 
@@ -70,3 +70,31 @@ class Rolesform(forms.ModelForm):
             'role_name' : forms.TextInput(attrs={'class':'form-control'}),
             'role_description' : forms.TextInput(attrs={'class':'form-control'}),
         }
+
+
+
+class EmployeeForm(forms.ModelForm):
+    class Meta:
+        model = Employe_User
+        fields = [
+            'first_name','last_name','email','mobile','role','dept','reporting_manager', 
+            'date_of_joining','username', 'password'
+        ]
+        
+        widgets = {
+            'password': forms.PasswordInput(),
+            'date_of_joining': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    first_name = forms.CharField(max_length=100, required=True, label="First Name")
+    last_name = forms.CharField(max_length=100, required=True, label="Last Name")
+    email = forms.EmailField(max_length=100, required=True, label="Email")
+    mobile = forms.CharField(max_length=100, required=True, label="Mobile Number")
+    role = forms.ModelChoiceField(queryset=Roles.objects.all(), required=True, label="Select Role")
+    dept = forms.ModelChoiceField(queryset=Department.objects.all(), required=True, label="Select Department")
+    reporting_manager = forms.ModelChoiceField(
+        queryset=Employe_User.objects.all(), required=False, label="Allocate Reporting Manager"
+    )
+    date_of_joining = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Date of Joining")
+    username = forms.CharField(max_length=100, required=True, label="Username")
+    password = forms.CharField(widget=forms.PasswordInput(), required=True, label="Set Password")
