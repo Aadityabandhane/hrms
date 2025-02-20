@@ -169,3 +169,14 @@ LOGGING = {
         },
     },
 }
+
+
+#========================== Email Settings =================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Brevo's SMTP server
+EMAIL_PORT = 587  # SMTP port for TLS
+EMAIL_USE_TLS = True  # Use TLS for secure connection
+EMAIL_HOST_USER = 'aadityabandhane5@gmail.com'  # This is the Brevo SMTP login email
+EMAIL_HOST_PASSWORD = 'jpod xfyq mzpq naaf'  # Brevo SMTP password
+DEFAULT_FROM_EMAIL = 'aadityabandhane5@gmail.com'  # Your Gmail address (or a verified Brevo email address)
+PASSWORD_RESET_TIMEOUT = 3600  # 1 hour

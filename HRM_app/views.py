@@ -2,6 +2,25 @@ from django.shortcuts import render,redirect,get_object_or_404
 from .forms import Departmentform,userauthenticationForm,registrationform,Rolesform,EmployeeForm
 from .models import Department,Roles,Employe_User
 from django.contrib.auth import authenticate,login,logout
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+
+
+
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+
+# Email...**********
+
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
+from django.utils.encoding import force_bytes,force_str
+from django.template.loader import render_to_string
+
+import uuid
+from django.conf import settings
+
 
 from django.contrib.auth.decorators import login_required
 
@@ -26,6 +45,7 @@ def add(request):
 
 def home(request):
     return render(request,'home.html')
+    
 
 
 
@@ -226,4 +246,55 @@ def updateemployee(request, emp_id):
         # Initialize the form with the existing product instance
         form = EmployeeForm(instance=Employe)
         return render(request, "updateemployee.html", {"form": form})
+
+
+
+def forgot_password(request):          
+
+    if request.method == 'POST':
+        email = request.POST['email']
+        user = User.objects.filter(email=email).first()
+        if user:
+            token = default_token_generator.make_token(user)
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            reset_url = request.build_absolute_uri(f'/reset_password/{uidb64}/{token}/')           
+            send_mail(
+                'Password Reset',
+                f'Click the given link to reset your password: {reset_url}',
+                settings.EMAIL_HOST_USER,  # Use a verified email address
+                [email],
+                fail_silently=False,
+            )
+            return redirect('passwordresetdone')
+        else:
+            print('I am executed')
+           
+    print('I am executed')
+    return render(request,'forgot_password.html')
+
+
+def reset_password(request, uidb64, token):
+    if request.method == 'POST':
+        password = request.POST['password']
+        print(password)
+        password2 = request.POST['password2']
+        print(password2)
+        if password == password2:
+            try:
+                uid = force_str(urlsafe_base64_decode(uidb64))
+                user = User.objects.get(pk=uid)
+                if default_token_generator.check_token(user, token):
+                    user.set_password(password)
+                    user.save()
+                    return redirect('login')
+                else:
+                    return HttpResponse('Token is invalid', status=400)
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                return HttpResponse('Invalid link', status=400)
+        else:
+            return HttpResponse('Passwords do not match', status=400)
+    return render(request, 'reset_password.html')
+
+def password_reset_done(request):
+    return render(request, 'password_reset_done.html')
 

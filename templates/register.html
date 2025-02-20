@@ -2,27 +2,24 @@
 
 {% load static %}
 
-
 {% block content %}
 
-    <div class="container my-3 p-5 w-50 shadow">
-        <div class="container text-center p-1 rounded shadow bg-info">
-            <h2 class="text-white">Registration form</h2>
+    <div style="margin: 20px auto; padding: 30px; width: 50%; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); border-radius: 10px;">
+        <div style="text-align: center; padding: 10px; border-radius: 5px; background-color: #17a2b8;">
+            <h2 style="color: white; margin: 0;">Registration Form</h2>
         </div>
-        <form action="" method="POST">
+        <form action="" method="POST" style="margin-top: 20px;">
             {% csrf_token %}
             {% if msg %}
-                <div class="alert alert-danger">
-                 {{msg}}
+                <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    {{ msg }}
                 </div>
-         
-                {% endif %}
-            {{RF.as_p}}
-            
-            <p><input id="btnsub" class="card-btn" type="submit"></p>
+            {% endif %}
+            <div style="margin-bottom: 15px;">
+                {{ RF.as_p }}
+            </div>
+            <p><input id="btnsub" type="submit" value="Register" style="background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px;"></p>
         </form>
-
     </div>
-
 
 {% endblock content %}
