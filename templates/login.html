@@ -20,13 +20,13 @@
         </div>
         <input type="submit" value="Login" style="background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px;">
     </form>
-    
-    <div style="margin-top: 15px; font-size: 14px;margin-left: 310px">
-        <span>Create new account </span>
-        <a href="{% url 'register' %}" style="color: #007bff; text-decoration: none;">click here</a>
+    <div style="display: flex; justify-content: center; margin-top: 15px; font-size: 14px;">
+        <span>Create new account</span>
+        <a href="{% url 'register' %}" style="color: #007bff; text-decoration: none; margin-left: 5px;">click here</a>
     </div>
-    
-    <div style="margin-top: 10px; font-size: 14px; margin-left: 340px">
+
+    <!-- Centering the "Forgot password?" link -->
+    <div style="display: flex; justify-content: center; margin-top: 10px; font-size: 14px;">
         <a href="{% url 'forgotpassword' %}" style="color: #dc3545; text-decoration: none;">Forgot password?</a>
     </div>
 </div>
