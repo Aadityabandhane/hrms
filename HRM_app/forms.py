@@ -1,5 +1,5 @@
 from django import forms
-from .models import Department,Roles,Employe_User
+from .models import Department,Roles,Employe_User,Task
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm,AuthenticationForm
 
@@ -98,3 +98,53 @@ class EmployeeForm(forms.ModelForm):
     date_of_joining = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label="Date of Joining")
     username = forms.CharField(max_length=100, required=True, label="Username")
     password = forms.CharField(widget=forms.PasswordInput(), required=True, label="Set Password")
+
+
+
+from django import forms
+from .models import Task, TaskAssignment
+
+class TaskForm(forms.ModelForm):
+    """Form for creating and editing tasks."""
+    class Meta:
+        model = Task
+        fields = '__all__'
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'task_title': forms.TextInput(attrs={'class': 'form-control'}),
+            'task_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'task_priority': forms.Select(attrs={'class': 'form-control'}),
+            'task_type': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+class TaskAssignmentForm(forms.ModelForm):
+    """Form for assigning tasks to employees."""
+    
+    class Meta:
+        model = TaskAssignment
+        fields = ['task', 'employee']  # Removed 'status' from fields for admin
+        widgets = {
+            'task': forms.Select(attrs={'class': 'form-control'}),
+            'employee': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+from django import forms
+from django.core.validators import MinValueValidator, MaxValueValidator
+from .models import PerformanceReview
+
+class PerformanceReviewForm(forms.ModelForm):
+    rating = forms.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        widget=forms.NumberInput(attrs={'min': 1, 'max': 10}),
+        label="Enter Rating (1-10):"
+    )
+
+    class Meta:
+        model = PerformanceReview
+        fields = ['review_title', 'review_date', 'employee', 'review_period', 'rating', 'comments']
+        widgets = {
+            'review_date': forms.DateInput(attrs={'type': 'date'}),
+            'review_period': forms.Select(choices=PerformanceReview.REVIEW_PERIOD_CHOICES),
+        }

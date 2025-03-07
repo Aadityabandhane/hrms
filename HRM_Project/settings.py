@@ -146,7 +146,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # SESSION_COOKIE_SECURE = True
 # CSRF_COOKIE_SECURE = True
 
-
+AUTH_USER_MODEL = 'HRM_app.Employe_User'
 
 #MEDIA_URL = '/media/'
 #MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

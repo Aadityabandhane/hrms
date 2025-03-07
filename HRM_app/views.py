@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 
+from HRM_app.auth_backend import custom_authenticate
 
 
 from django.contrib.auth.password_validation import validate_password
@@ -47,29 +48,37 @@ def home(request):
     return render(request,'home.html')
     
 
-
+from HRM_app.custom_authenticate import custom_authenticate
 
 import datetime
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from .models import Employe_User  # Import your custom user model
+from .forms import userauthenticationForm  # Ensure this form is correctly imported
+
 def logindetails(request):
-    if request.method=="POST":
-        uname=request.POST["username"]
-        upass=request.POST["password"]
-        user=authenticate(request,username=uname,password=upass)
-        
+    if request.method == "POST":
+        uname = request.POST["username"]
+        upass = request.POST["password"]
+
+        # Authenticate using Django's built-in authenticate function
+        user = authenticate(request, username=uname, password=upass)  
+
         if user is not None:
-            login(request,user)
-            response=redirect('home')
-            request.session['username']=uname
-            response.set_cookie('username',uname)
-            response.set_cookie('time',datetime.datetime.now())
+            login(request, user)  # Log the user in
+            response = redirect('home')
+            request.session['username'] = uname  # Save username in session
+            response.set_cookie('username', uname)
+            response.set_cookie('time', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # Store formatted timestamp
             return response
         else:
-            LDF=userauthenticationForm()
-            return render(request,"login.html",{"LDF":LDF,'msg':'Worong password or username...!'})
+            LDF = userauthenticationForm()
+            return render(request, "login.html", {"LDF": LDF, 'msg': 'Wrong password or username...!'})
+
     else:
-        LDF=userauthenticationForm()
-        return render(request,"login.html",{"LDF":LDF})
-    
+        LDF = userauthenticationForm()
+        return render(request, "login.html", {"LDF": LDF})
+
 def logout_details(request):
     logout(request)
     return redirect('home')
@@ -233,19 +242,28 @@ def deleteemployee(request, emp_id):
 
 
 def updateemployee(request, emp_id):
-    Employe = get_object_or_404(Employe_User, employee_id=emp_id)
-    if request.method == "POST":
-        form = EmployeeForm(request.POST, request.FILES,instance=Employe)
-        if form.is_valid():
-            form.save()
-            return redirect('updateemployee',emp_id=emp_id)
+    try:
+        Employe = get_object_or_404(Employe_User, employee_id=emp_id)
+        
+        if request.method == "POST":
+            form = EmployeeForm(request.POST, request.FILES, instance=Employe)
+            if form.is_valid():
+                print(form.cleaned_data)
+                
+                employee = form.save(commit=False)
+                if 'password' in form.cleaned_data and form.cleaned_data['password']:
+                    employee.password = make_password(form.cleaned_data['password'])
+                employee.save()
+                return redirect('updateemployee', emp_id=emp_id)
+            else:
+                return render(request, "updateemployee.html", {"form": form})
         else:
-            # Return the form with errors to the template
+            form = EmployeeForm(instance=Employe)
             return render(request, "updateemployee.html", {"form": form})
-    else:
-        # Initialize the form with the existing product instance
-        form = EmployeeForm(instance=Employe)
-        return render(request, "updateemployee.html", {"form": form})
+
+    except Exception as e:
+        print(f"Error updating employee: {e}")
+        return HttpResponseServerError("An error occurred while updating the employee.")
 
 
 
@@ -253,7 +271,7 @@ def forgot_password(request):
 
     if request.method == 'POST':
         email = request.POST['email']
-        user = User.objects.filter(email=email).first()
+        user = Employe_User.objects.filter(email=email).first()
         if user:
             token = default_token_generator.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
@@ -282,7 +300,7 @@ def reset_password(request, uidb64, token):
         if password == password2:
             try:
                 uid = force_str(urlsafe_base64_decode(uidb64))
-                user = User.objects.get(pk=uid)
+                user = Employe_User.objects.get(pk=uid)
                 if default_token_generator.check_token(user, token):
                     user.set_password(password)
                     user.save()
@@ -298,3 +316,182 @@ def reset_password(request, uidb64, token):
 def password_reset_done(request):
     return render(request, 'password_reset_done.html')
 
+
+
+
+
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Task, TaskAssignment,Employe_User
+from .forms import TaskForm, TaskAssignmentForm
+from django.contrib.auth.models import User
+from django.utils import timezone
+ 
+
+
+
+from collections import Counter
+import json
+
+def task_list(request):
+    user = request.user
+    print(f"user dashboard successfull redirect {user}")
+
+    tasks = Task.objects.all()
+    assigned_tasks = TaskAssignment.objects.all()
+
+    # Count task priorities for the pie chart
+    priority_counts = Counter(task.task_priority for task in tasks)
+
+    return render(request, 'task_list.html', {
+        'tasks': tasks,
+        'assigned_tasks': assigned_tasks,
+        'priority_counts': json.dumps(priority_counts)  # Convert to JSON for Chart.js
+    })
+
+
+
+
+def task_create(request):
+    """Create a new task."""
+    if request.method == 'POST':
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.save()
+            print("✅ New Task Created:", task.task_id)  # Debugging Task ID
+            return redirect('task_list')
+        else:
+            print("❌ Form Errors:", form.errors)  # Debugging Form Errors
+    else:
+        form = TaskForm()
+
+    return render(request, 'task_form.html', {'form': form})
+
+
+
+
+def task_update(request, task_id):
+    """Allows the admin to update a task."""
+    task = get_object_or_404(Task, pk=task_id)
+
+    if not request.user.is_staff:
+        return redirect('task_list')
+
+    if request.method == "POST":
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            return redirect('task_list')
+
+    else:
+        form = TaskForm(instance=task)
+    
+    return render(request, 'task_form.html', {'form': form})
+
+
+@login_required
+def task_delete(request, task_id):
+    """Allows the admin to delete a task."""
+    task = get_object_or_404(Task, pk=task_id)
+
+    if not request.user.is_staff:
+        return redirect('task_list')
+
+    if request.method == "POST":
+        task.delete()
+        return redirect('task_list')
+
+    return render(request, 'task_confirm_delete.html', {'task': task})
+
+
+
+
+def assign_task(request):
+    """View for assigning tasks to employees."""
+    print(f"User: {request.user}, Superuser: {request.user.is_superuser}, Role: {getattr(request.user, 'role', 'No role')} - Trying to assign a task")
+
+
+    if request.method == "POST":
+        print("Received POST request for task assignment")
+        form = TaskAssignmentForm(request.POST)
+        if form.is_valid():
+            task_assignment = form.save(commit=False)
+
+            if request.user.is_superuser:
+                task_assignment.assigned_by = None  # Set NULL since admin is not in Employe_User
+                task_assignment.assigned_by_name = request.user.username  # Store admin's username
+                print(f"Task assigned by Admin: {request.user.username}")
+            else:
+                try:
+                    employe_user = Employe_User.objects.get(username=request.user.username)
+                    task_assignment.assigned_by = employe_user
+                    task_assignment.assigned_by_name = f"{employe_user.first_name} {employe_user.last_name}"
+                    print(f"Task assigned by Employee: {task_assignment.assigned_by_name}")
+                except Employe_User.DoesNotExist:
+                    print("Error: No matching Employe_User found for this user.")
+                    return redirect("task_list")
+
+            task_assignment.save()
+            print("Task assigned successfully!")
+            return redirect("task_list")  # Redirect to task list page
+        else:
+            print("Form validation failed.")
+    else:
+        print("Rendering empty task assignment form.")
+        form = TaskAssignmentForm()
+
+    return render(request, "task_assign.html", {"form": form})
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import PerformanceReview
+from .forms import PerformanceReviewForm
+
+# View to list all reviews
+@login_required
+def review_list(request):
+    reviews = PerformanceReview.objects.all()
+    return render(request, 'review_list.html', {'reviews': reviews})
+
+# View to add a review
+@login_required
+def add_review(request):
+    if request.method == "POST":
+        form = PerformanceReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.reviewed_by = request.user
+            review.save()
+            return redirect('review_list')
+    else:
+        form = PerformanceReviewForm()
+    return render(request, 'add_review.html', {'form': form})
+
+# View to edit a review
+@login_required
+def edit_review(request, review_id):
+    review = get_object_or_404(PerformanceReview, id=review_id)
+    if request.method == "POST":
+        form = PerformanceReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            form.save()
+            return redirect('review_list')
+    else:
+        form = PerformanceReviewForm(instance=review)
+    return render(request, 'edit_review.html', {'form': form, 'review': review})
+
+# View to delete a review
+@login_required
+def delete_review(request, review_id):
+    review = get_object_or_404(PerformanceReview, id=review_id)
+    if request.method == "POST":
+        review.delete()
+        return redirect('review_list')
+    return render(request, 'delete_review.html', {'review': review})

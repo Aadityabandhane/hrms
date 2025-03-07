@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Performance Reviews</h2>
+<a href="{% url 'add_review' %}">Add New Review</a>
+<table border="1">
+    <tr>
+        <th>Title</th>
+        <th>Employee</th>
+        <th>Reviewer</th>
+        <th>Review Date</th>
+        <th>Period</th>
+        <th>Rating</th>
+        <th>Comments</th>
+        <th>Actions</th>
+    </tr>
+    {% for review in reviews %}
+    <tr>
+        <td>{{ review.review_title }}</td>
+        <td>{{ review.employee.username }}</td>
+        <td>{{ review.reviewed_by.username }}</td>
+        <td>{{ review.review_date }}</td>
+        <td>{{ review.review_period }}</td>
+        <td>{{ review.rating }}</td>
+        <td>{{ review.comments }}</td>
+        <td>
+            <a href="{% url 'edit_review' review.id %}">Edit</a> |
+            <a href="{% url 'delete_review' review.id %}">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
